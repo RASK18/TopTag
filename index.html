@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TopTag</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body data-view="idle">
+    <div id="toastRoot" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+    <main class="shell">
+      <section class="entry-view" aria-label="Formulario de busqueda">
+        <div class="entry-stack">
+          <div class="form-heading">
+            <h1>TopTag</h1>
+            <p>Encuentra los tags dominantes de tu biblioteca de Steam.</p>
+          </div>
+
+          <form id="lookupForm" class="lookup-card" autocomplete="off">
+          <div class="form-grid">
+            <label class="field">
+              <span>Perfil principal</span>
+              <input
+                id="primaryProfile"
+                name="primaryProfile"
+                type="text"
+                placeholder="SteamID64, profileUrl, /id/vanity..."
+                required
+              >
+            </label>
+
+            <label id="familyProfilesField" class="field family-field" hidden>
+              <span>Perfiles familiares</span>
+              <textarea
+                id="familyProfiles"
+                name="familyProfiles"
+                rows="3"
+                placeholder="Uno por linea, maximo 5"
+              ></textarea>
+            </label>
+          </div>
+
+          <div class="actions-row">
+            <label class="check-control">
+              <input id="includeFamily" name="includeFamily" type="checkbox">
+              <span>Incluir Family Sharing</span>
+            </label>
+
+            <button id="submitButton" class="primary-button" type="submit">Analizar</button>
+          </div>
+
+          <input id="workerEndpoint" name="workerEndpoint" type="hidden">
+          <p id="formMessage" class="form-message"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="loading-view" aria-live="polite" aria-label="Carga">
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="statusText">Preparando perfiles.</p>
+        <p id="progressCount"></p>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section class="results-view" aria-label="Resultados">
+        <section id="playerCard" class="player-card" aria-label="Perfil de Steam" hidden>
+          <img id="playerAvatar" src="" alt="">
+          <div>
+            <h2 id="playerName">Perfil de Steam</h2>
+            <p id="playerSteamId"></p>
+          </div>
+        </section>
+
+        <div class="results-header">
+          <div>
+            <h2>Top tags</h2>
+            <p id="resultMode">Sin datos.</p>
+          </div>
+          <div class="results-actions">
+            <button id="shareButton" class="ghost-button" type="button">Compartir</button>
+            <button id="clearCacheButton" class="ghost-button" type="button">Limpiar cache</button>
+          </div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Tag</th>
+                  <th scope="col">Juegos</th>
+                  <th scope="col">Horas</th>
+                  <th scope="col">Ejemplos</th>
+                </tr>
+              </thead>
+              <tbody id="tagsTableBody">
+                <tr>
+                  <td colspan="5" class="empty-cell">Introduce un perfil para empezar.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Resumen">
+        <article>
+          <h2>Propios</h2>
+          <p id="ownedCount">0</p>
+        </article>
+        <article>
+          <h2>Familiares elegibles</h2>
+          <p id="familyEligibleCount">0</p>
+        </article>
+        <article>
+          <h2>Tags cargados</h2>
+          <p id="tagsLoadedCount">0</p>
+        </article>
+        <article class="summary-clickable">
+          <button id="skippedDetailsButton" class="summary-button" type="button" disabled>
+            <span>Omitidos</span>
+            <strong id="skippedCount">0</strong>
+          </button>
+        </article>
+      </section>
+    </main>
+
+    <div id="tagModal" class="modal-backdrop" hidden>
+      <section class="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+        <header class="tag-modal-header">
+          <div>
+            <h2 id="tagModalTitle">Detalle del tag</h2>
+            <p id="tagModalMeta"></p>
+          </div>
+          <button id="tagModalClose" class="modal-close" type="button" aria-label="Cerrar detalle">X</button>
+        </header>
+
+        <div class="tag-modal-list" role="table" aria-label="Juegos del tag">
+          <div class="tag-modal-list-head" role="row">
+            <span id="tagModalFirstHeader" role="columnheader">Juego</span>
+            <span id="tagModalSecondHeader" role="columnheader">Horas</span>
+          </div>
+          <div id="tagModalGames"></div>
+        </div>
+      </section>
+    </div>
+
+    <script src="config.js"></script>
+    <script defer src="app.js"></script>
+  </body>
+</html>

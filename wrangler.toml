@@ -1,0 +1,11 @@
+name = "toptag-steam-proxy"
+main = "cloudflare-worker.js"
+compatibility_date = "2025-12-01"
+workers_dev = true
+
+[vars]
+# Cambialo por tu origen real de GitHub Pages cuando publiques.
+# "null" permite probar desde file:// mientras desarrollas en local.
+ALLOWED_ORIGINS = "null,https://rask18.github.io"
+STORE_CACHE_TTL_SECONDS = "86400"
+TAG_CACHE_TTL_SECONDS = "604800"
