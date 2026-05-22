@@ -33,11 +33,12 @@
     progressCount: document.getElementById("progressCount"),
     progressBar: document.getElementById("progressBar"),
     ownedCount: document.getElementById("ownedCount"),
+    totalHoursCount: document.getElementById("totalHoursCount"),
     familyEligibleCount: document.getElementById("familyEligibleCount"),
     tagsLoadedCount: document.getElementById("tagsLoadedCount"),
     skippedCount: document.getElementById("skippedCount"),
     resultMode: document.getElementById("resultMode"),
-    tagsTableBody: document.getElementById("tagsTableBody"),
+    tagsCards: document.getElementById("tagsCards"),
     toastRoot: document.getElementById("toastRoot"),
     playerCard: document.getElementById("playerCard"),
     playerAvatar: document.getElementById("playerAvatar"),
@@ -137,6 +138,7 @@
         family: []
       },
       currentRanking: [],
+      detectedTagCount: 0,
       playerSummary: null,
       tagsLoaded: 0,
       isBusy: false
@@ -282,6 +284,7 @@
         state.familyGames.push({
           appid: game.appid,
           name: game.name || details.name || String(game.appid),
+          iconUrl: game.iconUrl,
           source: "family",
           ownerSteamId: game.ownerSteamId
         });
@@ -379,8 +382,10 @@
 
   function renderResults() {
     var selectedGames = getSelectedGames();
-    var ranking = buildTagRanking(selectedGames).slice(0, 20);
+    var allRanking = buildTagRanking(selectedGames);
+    var ranking = allRanking.slice(0, 20);
     state.currentRanking = ranking;
+    state.detectedTagCount = allRanking.length;
     closeTagModal();
     renderPlayerCard();
 
@@ -389,38 +394,31 @@
       return;
     }
 
-    elements.tagsTableBody.textContent = "";
-
+    elements.tagsCards.textContent = "";
     ranking.forEach(function (entry, index) {
-      var row = document.createElement("tr");
-      appendCell(row, String(index + 1));
-      appendTagCell(row, entry);
-      appendCell(row, String(entry.count));
-      appendCell(row, formatHours(entry.primaryPlaytimeMinutes));
-      appendCell(row, entry.examples.join(", "), "examples");
-      elements.tagsTableBody.appendChild(row);
+      elements.tagsCards.appendChild(createTagCard(entry, index));
     });
 
     var sourceText = elements.includeFamily.checked && state.familyGames.length
       ? selectedGames.length + " juegos, Family Sharing incluido"
       : selectedGames.length + " juegos propios";
     elements.resultMode.textContent = sourceText + ".";
+    updateSummary();
     setView("results");
   }
 
   function renderEmptyResults(message) {
     renderPlayerCard();
     state.currentRanking = [];
+    state.detectedTagCount = 0;
     closeTagModal();
-    elements.tagsTableBody.textContent = "";
-    var row = document.createElement("tr");
-    var cell = document.createElement("td");
-    cell.colSpan = 5;
+    elements.tagsCards.textContent = "";
+    var cell = document.createElement("p");
     cell.className = "empty-cell";
     cell.textContent = message;
-    row.appendChild(cell);
-    elements.tagsTableBody.appendChild(row);
+    elements.tagsCards.appendChild(cell);
     elements.resultMode.textContent = message;
+    updateSummary();
     setView("results");
   }
 
@@ -481,6 +479,7 @@
         entry.games.push({
           appid: game.appid,
           name: game.name || String(game.appid),
+          iconUrl: game.iconUrl,
           playtimeMinutes: game.source === "owned" ? Number(game.playtimeMinutes) || 0 : 0,
           source: game.source
         });
@@ -613,6 +612,7 @@
       normalized.push({
         appid: appid,
         name: game.name || String(appid),
+        iconUrl: getSteamGameIconUrl(appid, game.img_icon_url),
         source: source,
         ownerSteamId: ownerSteamId,
         playtimeMinutes: source === "owned" ? Number(game.playtime_forever) || 0 : 0
@@ -801,11 +801,15 @@
     var loadedTags = selectedGames.filter(function (game) {
       return state.tagCache.has(game.appid);
     }).length;
+    var ownedMinutes = state.ownedGames.reduce(function (sum, game) {
+      return sum + (Number(game.playtimeMinutes) || 0);
+    }, 0);
     var skippedTotal = sumSkipped();
 
     elements.ownedCount.textContent = String(state.ownedGames.length);
+    elements.totalHoursCount.textContent = formatHours(ownedMinutes);
     elements.familyEligibleCount.textContent = String(state.familyGames.length);
-    elements.tagsLoadedCount.textContent = String(loadedTags);
+    elements.tagsLoadedCount.textContent = String(state.detectedTagCount || loadedTags);
     elements.skippedCount.textContent = String(skippedTotal);
     elements.skippedDetailsButton.disabled = skippedTotal === 0;
   }
@@ -869,34 +873,85 @@
     writeFormToUrl();
 
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(buildFormUrl().toString());
       showToast("Enlace copiado al portapapeles.", "success");
     } catch (error) {
       showToast("No se pudo copiar el enlace.", "error");
     }
   }
 
-  function appendCell(row, text, className) {
-    var cell = document.createElement("td");
-    if (className) {
-      cell.className = className;
-    }
-    cell.textContent = text;
-    row.appendChild(cell);
-  }
+  function createTagCard(entry, index) {
+    var card = document.createElement("button");
+    var header = document.createElement("span");
+    var rank = document.createElement("span");
+    var name = document.createElement("strong");
+    var hours = document.createElement("span");
+    var examples = document.createElement("span");
+    var previewGames = entry.games.slice(0, 3);
 
-  function appendTagCell(row, entry) {
-    var cell = document.createElement("td");
-    var button = document.createElement("button");
-    button.className = "tag-trigger";
-    button.type = "button";
-    button.textContent = entry.name;
-    button.addEventListener("click", function () {
+    card.className = "tag-card " + (index < 3 ? "tag-rank-" + (index + 1) : "tag-rank-other");
+    card.type = "button";
+    card.setAttribute("aria-label", "Ver detalle de " + entry.name);
+    card.addEventListener("click", function () {
       openTagModal(entry);
     });
 
-    cell.appendChild(button);
-    row.appendChild(cell);
+    header.className = "tag-card-header";
+    rank.className = "tag-card-rank";
+    name.className = "tag-card-name";
+    hours.className = "tag-card-hours";
+    examples.className = "tag-card-examples";
+
+    rank.textContent = String(index + 1);
+    name.textContent = entry.name;
+    hours.textContent = formatHours(entry.primaryPlaytimeMinutes);
+
+    header.appendChild(rank);
+    header.appendChild(name);
+    header.appendChild(hours);
+    card.appendChild(header);
+
+    previewGames.forEach(function (game) {
+      examples.appendChild(createTagCardExample(game));
+    });
+
+    if (entry.count > previewGames.length) {
+      var extra = document.createElement("span");
+      extra.className = "tag-card-extra";
+      extra.textContent = "+" + (entry.count - previewGames.length) + " mas";
+      examples.appendChild(extra);
+    }
+
+    card.appendChild(examples);
+    return card;
+  }
+
+  function createTagCardExample(game) {
+    var frame = document.createElement("span");
+    var image = document.createElement("img");
+
+    frame.className = "tag-card-example";
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.src = getSteamGameCoverUrl(game.appid);
+    image.addEventListener("error", function () {
+      image.replaceWith(createTagCoverFallback(game));
+    });
+
+    frame.appendChild(image);
+    return frame;
+  }
+
+  function createTagCoverFallback(game) {
+    var fallback = document.createElement("span");
+    var name = String(game && game.name ? game.name : "").trim();
+
+    fallback.className = "tag-card-cover-fallback";
+    fallback.setAttribute("aria-hidden", "true");
+    fallback.textContent = name ? name.charAt(0).toUpperCase() : "?";
+
+    return fallback;
   }
 
   function openTagModal(entry) {
@@ -910,14 +965,16 @@
     entry.games.forEach(function (game) {
       var row = document.createElement("div");
       var title = document.createElement("div");
+      var copy = document.createElement("div");
       var name = document.createElement("strong");
       var source = document.createElement("span");
       var hours = document.createElement("span");
 
       row.className = "tag-modal-game";
       row.setAttribute("role", "row");
-      title.className = "tag-modal-game-title";
+      title.className = "tag-modal-game-title has-icon";
       title.setAttribute("role", "cell");
+      copy.className = "tag-modal-game-copy";
       hours.className = "tag-modal-game-hours";
       hours.setAttribute("role", "cell");
 
@@ -925,8 +982,10 @@
       source.textContent = game.source === "owned" ? "Propio" : "Family Sharing";
       hours.textContent = game.source === "owned" ? formatHours(game.playtimeMinutes) : "-";
 
-      title.appendChild(name);
-      title.appendChild(source);
+      copy.appendChild(name);
+      copy.appendChild(source);
+      title.appendChild(createGameIcon(game));
+      title.appendChild(copy);
       row.appendChild(title);
       row.appendChild(hours);
       elements.tagModalGames.appendChild(row);
@@ -1010,6 +1069,46 @@
     return parts.join(" - ");
   }
 
+  function getSteamGameIconUrl(appid, iconHash) {
+    var hash = String(iconHash || "").trim();
+    if (!hash) return "";
+
+    return "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/" + appid + "/" + hash + ".jpg";
+  }
+
+  function getSteamGameCoverUrl(appid) {
+    return "https://cdn.cloudflare.steamstatic.com/steam/apps/" + appid + "/library_600x900.jpg";
+  }
+
+  function createGameIcon(game) {
+    if (!game.iconUrl) {
+      return createGameIconFallback(game);
+    }
+
+    var icon = document.createElement("img");
+    icon.className = "tag-modal-game-icon";
+    icon.alt = "";
+    icon.loading = "lazy";
+    icon.decoding = "async";
+    icon.src = game.iconUrl;
+    icon.addEventListener("error", function () {
+      icon.replaceWith(createGameIconFallback(game));
+    });
+
+    return icon;
+  }
+
+  function createGameIconFallback(game) {
+    var fallback = document.createElement("span");
+    var name = String(game && game.name ? game.name : "").trim();
+
+    fallback.className = "tag-modal-game-icon tag-modal-game-icon-fallback";
+    fallback.setAttribute("aria-hidden", "true");
+    fallback.textContent = name ? name.charAt(0).toUpperCase() : "?";
+
+    return fallback;
+  }
+
   function closeTagModal() {
     elements.tagModal.hidden = true;
   }
@@ -1044,7 +1143,21 @@
     elements.familyProfiles.disabled = isBusy;
     elements.shareButton.disabled = isBusy;
     elements.clearCacheButton.disabled = isBusy;
-    elements.submitButton.textContent = isBusy ? "Analizando..." : "Analizar biblioteca";
+    setSubmitButtonLabel(isBusy ? "Analizando..." : "Analizar", isBusy ? "" : "->");
+  }
+
+  function setSubmitButtonLabel(label, suffix) {
+    elements.submitButton.textContent = "";
+    var text = document.createElement("span");
+    text.textContent = label;
+    elements.submitButton.appendChild(text);
+
+    if (suffix) {
+      var arrow = document.createElement("span");
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = suffix;
+      elements.submitButton.appendChild(arrow);
+    }
   }
 
   function setView(view) {
@@ -1098,6 +1211,8 @@
     });
 
     state.tagCache.clear();
+    state.currentRanking = [];
+    state.detectedTagCount = 0;
     state.tagsLoaded = 0;
   }
 
@@ -1124,6 +1239,18 @@
   }
 
   function writeFormToUrl() {
+    if (!canRewriteCurrentUrl()) return;
+
+    var url = buildFormUrl();
+
+    try {
+      window.history.replaceState(null, "", url.toString());
+    } catch (error) {
+      // Local file URLs have special browser security rules. The hosted app can still keep shareable URLs in sync.
+    }
+  }
+
+  function buildFormUrl() {
     var url = new URL(window.location.href);
     var params = url.searchParams;
     var profile = elements.primaryProfile.value.trim();
@@ -1142,7 +1269,11 @@
       params.append("family", family);
     });
 
-    window.history.replaceState(null, "", url.toString());
+    return url;
+  }
+
+  function canRewriteCurrentUrl() {
+    return window.location.protocol === "http:" || window.location.protocol === "https:";
   }
 
   function saveSettings() {

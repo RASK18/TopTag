@@ -10,48 +10,109 @@
     <div id="toastRoot" class="toast-root" aria-live="polite" aria-atomic="true"></div>
     <main class="shell">
       <section class="entry-view" aria-label="Formulario de busqueda">
+        <div class="entry-scene" aria-hidden="true">
+          <div class="cover-wall cover-wall-left">
+            <span>METRO</span>
+            <span>BALDUR</span>
+            <span>HADES</span>
+            <span>RPG</span>
+            <span>INDIE</span>
+            <span>ROGUE</span>
+            <span>HORROR</span>
+            <span>COOP</span>
+          </div>
+          <div class="cover-wall cover-wall-right">
+            <span>ELDEN</span>
+            <span>HADES</span>
+            <span>DISCO</span>
+            <span>STARDEW</span>
+            <span>CYBER</span>
+            <span>SLAY</span>
+            <span>VALHEIM</span>
+            <span>DEAD</span>
+          </div>
+        </div>
+
+        <header class="entry-brand" aria-label="TopTag">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <strong>TopTag</strong>
+        </header>
+
         <div class="entry-stack">
           <div class="form-heading">
-            <h1>TopTag</h1>
-            <p>Encuentra los tags dominantes de tu biblioteca de Steam.</p>
+            <h1>Top<span>Tag</span></h1>
+            <p>Encuentra los tags dominantes de tu biblioteca de Steam.<br>Descubre en que destaca tu coleccion.</p>
+            <div class="hero-divider" aria-hidden="true"><span></span></div>
           </div>
 
           <form id="lookupForm" class="lookup-card" autocomplete="off">
-          <div class="form-grid">
-            <label class="field">
-              <span>Perfil principal</span>
-              <input
-                id="primaryProfile"
-                name="primaryProfile"
-                type="text"
-                placeholder="SteamID64, profileUrl, /id/vanity..."
-                required
-              >
-            </label>
+            <div class="form-grid">
+              <label class="field profile-field">
+                <span>Perfil principal</span>
+                <input
+                  id="primaryProfile"
+                  name="primaryProfile"
+                  type="text"
+                  placeholder="SteamID64, profileUrl, /id/vanity..."
+                  required
+                >
+              </label>
 
-            <label id="familyProfilesField" class="field family-field" hidden>
-              <span>Perfiles familiares</span>
-              <textarea
-                id="familyProfiles"
-                name="familyProfiles"
-                rows="3"
-                placeholder="Uno por linea, maximo 5"
-              ></textarea>
-            </label>
-          </div>
+              <label id="familyProfilesField" class="field family-field" hidden>
+                <span>Perfiles familiares</span>
+                <textarea
+                  id="familyProfiles"
+                  name="familyProfiles"
+                  rows="3"
+                  placeholder="Uno por linea, maximo 5"
+                ></textarea>
+              </label>
+            </div>
 
-          <div class="actions-row">
-            <label class="check-control">
-              <input id="includeFamily" name="includeFamily" type="checkbox">
-              <span>Incluir Family Sharing</span>
-            </label>
+            <div class="actions-row">
+              <label class="check-control">
+                <input id="includeFamily" name="includeFamily" type="checkbox">
+                <span>Incluir Family Sharing</span>
+              </label>
 
-            <button id="submitButton" class="primary-button" type="submit">Analizar</button>
-          </div>
+              <button id="submitButton" class="primary-button" type="submit">
+                <span>Analizar</span>
+                <span aria-hidden="true">-></span>
+              </button>
+            </div>
 
-          <input id="workerEndpoint" name="workerEndpoint" type="hidden">
-          <p id="formMessage" class="form-message"></p>
+            <input id="workerEndpoint" name="workerEndpoint" type="hidden">
+            <p id="formMessage" class="form-message"></p>
           </form>
+
+          <div class="entry-tagline" aria-hidden="true">
+            <span></span>
+            <p>Identifica lo que define tu biblioteca.</p>
+            <span></span>
+          </div>
+
+          <div class="tag-pills" aria-hidden="true">
+            <span>RPG</span>
+            <span>Mundo Abierto</span>
+            <span>Indie</span>
+            <span>Supervivencia</span>
+            <span>Puzles</span>
+          </div>
+
+          <aside class="privacy-note">
+            <span class="privacy-mark" aria-hidden="true"></span>
+            <div>
+              <strong>Enfocado en privacidad</strong>
+              <p>No almacenamos tus datos. Todo el analisis ocurre al instante.</p>
+            </div>
+          </aside>
+
+          <ul class="entry-notes" aria-label="Ventajas">
+            <li>Sin registros</li>
+            <li>100% en tu navegador</li>
+            <li>Sin instalacion</li>
+            <li>Gratis para siempre</li>
+          </ul>
         </div>
       </section>
 
@@ -66,10 +127,36 @@
 
       <section class="results-view" aria-label="Resultados">
         <section id="playerCard" class="player-card" aria-label="Perfil de Steam" hidden>
-          <img id="playerAvatar" src="" alt="">
-          <div>
-            <h2 id="playerName">Perfil de Steam</h2>
-            <p id="playerSteamId"></p>
+          <div class="player-identity">
+            <img id="playerAvatar" src="" alt="">
+            <div class="player-copy">
+              <h2 id="playerName">Perfil de Steam</h2>
+              <p id="playerSteamId"></p>
+            </div>
+          </div>
+
+          <div class="result-stats" aria-label="Resumen de resultados">
+            <article class="result-stat result-stat-games">
+              <strong id="ownedCount">0</strong>
+              <span>Juegos propios</span>
+            </article>
+            <article class="result-stat result-stat-hours">
+              <strong id="totalHoursCount">0 h</strong>
+              <span>Horas totales</span>
+            </article>
+            <article class="result-stat result-stat-tags">
+              <strong id="tagsLoadedCount">0</strong>
+              <span>Tags detectados</span>
+            </article>
+            <article class="result-stat result-stat-family">
+              <strong id="familyEligibleCount">0</strong>
+              <span>Familiares elegibles</span>
+            </article>
+          </div>
+
+          <div class="results-actions">
+            <button id="shareButton" class="ghost-button" type="button">Compartir</button>
+            <button id="clearCacheButton" class="ghost-button" type="button">Limpiar cache</button>
           </div>
         </section>
 
@@ -78,47 +165,14 @@
             <h2>Top tags</h2>
             <p id="resultMode">Sin datos.</p>
           </div>
-          <div class="results-actions">
-            <button id="shareButton" class="ghost-button" type="button">Compartir</button>
-            <button id="clearCacheButton" class="ghost-button" type="button">Limpiar cache</button>
-          </div>
         </div>
 
-        <div class="table-panel">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Tag</th>
-                  <th scope="col">Juegos</th>
-                  <th scope="col">Horas</th>
-                  <th scope="col">Ejemplos</th>
-                </tr>
-              </thead>
-              <tbody id="tagsTableBody">
-                <tr>
-                  <td colspan="5" class="empty-cell">Introduce un perfil para empezar.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div id="tagsCards" class="tags-grid" aria-live="polite">
+          <p class="empty-cell">Introduce un perfil para empezar.</p>
         </div>
       </section>
 
       <section class="summary-grid" aria-label="Resumen">
-        <article>
-          <h2>Propios</h2>
-          <p id="ownedCount">0</p>
-        </article>
-        <article>
-          <h2>Familiares elegibles</h2>
-          <p id="familyEligibleCount">0</p>
-        </article>
-        <article>
-          <h2>Tags cargados</h2>
-          <p id="tagsLoadedCount">0</p>
-        </article>
         <article class="summary-clickable">
           <button id="skippedDetailsButton" class="summary-button" type="button" disabled>
             <span>Omitidos</span>
